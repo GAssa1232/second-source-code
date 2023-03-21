@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <stdlib.h>
+char TimeDat[24][9];
+float TempArr[24][2];
+float HumiArr[24];
+float MotionArr[24][6];
+int tempState[24][2], humiState[24], motionState[24][6];
+#define FILE_NAME "energy.txt"
+void ReadDataFile(char *location, float tempThreshold, float humiThreshold, float motionThreshold);
+
+int main() {
+    char location[100];
+    float tempThreshold, humiThreshold, motionThreshold;
+    printf("Enter the file location: ");
+    scanf("%s", location);
+    printf("Enter the temperature threshold: ");
+    scanf("%f", &tempThreshold);
+    printf("Enter the humidity threshold: ");
+    scanf("%f", &humiThreshold);
+    printf("Enter the motion threshold: ");
+    scanf("%f", &motionThreshold);
+    ReadDataFile(location, tempThreshold, humiThreshold, motionThreshold);
+    printf("Time     Temp1   Temp2   Humidity    Motion1 Motion2 Motion3 Motion4 Motion5 Motion6\n");
+    for (int i = 0; i < 24; i++) {
+        printf("%s %.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n",
+            TimeDat[i], TempArr[i][0], TempArr[i][1], HumiArr[i],
+            MotionArr[i][0], MotionArr[i][1], MotionArr[i][2],
+            MotionArr[i][3], MotionArr[i][4], MotionArr[i][5]);
+    }
+    int tempSum = 0, humiSum = 0, motionSum = 0;
+    for (int i = 0; i < 24; i++) {
+        tempSum += tempState[i][0] + tempState[i][1];
+        humiSum += humiState[i];
+        for (int j = 0; j < 6; j++) {
+            motionSum += motionState[i][j];
+        }
+    }
+    printf("Total heating hours: %d\n", tempSum);
+    printf("Total Ventilation hours: %d\n", humiSum);
+    printf("Total Light hours: %d\n", motionSum);
+    int energy = tempSum * 200 + humiSum * 150 + motionSum * 100;
+    printf("Energy: %d\n", energy);
+ 
+    FILE *fp;
+    fp = fopen(FILE_NAME, "w");
+    if (fp == NULL) {
+        printf("Error opening file %s\n", FILE_NAME);
+        return 1;
+    }
+    fprintf(fp, "%d", energy);
+    fclose(fp);
+
+    
+    return 0;
+}
+
+void ReadDataFile(char *location, float tempThreshold, float humiThreshold, float motionThreshold) {
+    int t;
+    FILE *fp;
+    fp = fopen(location, "r");
+    if(fp == NULL)
+    {
+        printf("Error!\n");
+        exit(1);
+    }
+    for(t=0; (t<24 && !feof(fp)); t++)
+    {
+        fscanf(fp, "%s", TimeDat[t]);
+fscanf(fp, "%f%f", &TempArr[t][0], &TempArr[t][1]);
+       if (TempArr[t][0] > tempThreshold) {
+            tempState[t][0] = 1;
+        } else {
+            tempState[t][0] = 0;
+        }
+        if (TempArr[t][1] > tempThreshold) {
+            tempState[t][1] = 1;
+        } else {
+            tempState[t][1] = 0;
+        }
+        fscanf(fp, "%f", &HumiArr[t])
+        if (HumiArr[t] > humiThreshold) {
+            humiState[t] = 1;
+        } else {
+            humiState[t] = 0;
+        }
+for ( int k=0; k<6; k++)
+            fscanf(fp,"%f", &MotionArr[t][k]);
+       for ( int k=0; k<6; k++) {
+            if (MotionArr[t][k] > motionThreshold) {
+                motionState[t][k] = 1;
+            } else {
+                motionState[t][k] = 0;
+            }
+        }
+    }
+    fclose(fp);
+}
